@@ -1,18 +1,15 @@
-name: CI
+name: WR1200JS_4.4
 
 # Controls when the action will run. 
 on: 
-  push:
-  pull_request:
+  repository_dispatch:
   workflow_dispatch:
-  release:
-    types: [published]
 
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
   build:
     name: build
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     if: ${{ !(github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')) }}
     env:
       build_variant: ${{ matrix.build_variant }}
@@ -22,17 +19,20 @@ jobs:
       matrix:
         include:
           - build_variant: "mt7621"
-            targets: "WR1200JS K2P DIR-878 CR660x JCG-Q20 MI-4"
-          - build_variant: "mt7621-usb-1"
-            targets: "XY-C1 JCG-836PRO JCG-Y2 NEWIFI ZTE-E8820S B70"
-          - build_variant: "mt7621-usb-2"
-            targets: "MI-R3G JCG-AC860M NETGEAR-BZV MI-R3P R2100 RM2100 MSG1500 BELL-A040WQ"
+            targets: "WR1200JS"
+         # - build_variant: "mt7621-usb-1"
+         #   targets: "XY-C1 JCG-836PRO JCG-Y2 NEWIFI ZTE-E8820S B70"
+         # - build_variant: "mt7621-usb-2"
+         #   targets: "MI-R3G JCG-AC860M NETGEAR-BZV MI-R3P R2100 RM2100 MSG1500 BELL-A040WQ"
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Prepare environment
         run: |
           sudo apt update
-          sudo apt install libtool-bin gperf python3-docutils autopoint gettext
+          sudo apt install libtool-bin gperf autopoint gettext \
+          python2.7 python3 python3-pip libpython3-dev 
+          sudo -E apt-get -qq autoremove --purge
+          sudo -E apt-get -qq clean
       - name: Run shellcheck
         run: sh ./trunk/tools/shellcheck.sh
       - name: Prepare toolchain
@@ -56,7 +56,7 @@ jobs:
           echo "image_name=${image_name}" >> $GITHUB_ENV
       - name: Upload images to Artifact
         if: ${{ github.event_name != 'release' && success() }}
-        uses: actions/upload-artifact@v2.2.1
+        uses: actions/upload-artifact@v3
         with:
           name: ${{ env.image_name }}
           path: ${{ env.images_dir }}/*.7z
